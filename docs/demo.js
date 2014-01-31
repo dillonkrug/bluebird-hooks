@@ -28,11 +28,7 @@ Model.prototype = {
 Model.before = hooks.before;
 Model.after  = hooks.after;
 
-//	All you need to do to get started is add hooks.before and hooks.after to the Constructor.
-//	
-//	I added it to the prototype, so we can add hooks to instances as well as the constructor level.
-//	
-//	More on that later.
+//	All you need to do to get started is add hooks.before and hooks.after to a constructor.
 //	
 //	----------------
 //	# Middleware
@@ -72,8 +68,7 @@ doc.save();
 //	> "Document Saving!"		500ms
 //	```
 //	
-//	That second hook is really taking a long time, and It doesn't depend on any other hooks, 
-//	so it doesn't need to be run sequentially.
+//	That second hook is taking a long time, and it doesn't depend on any other hooks.
 //	
 //	Let's give it it's own thread!
 
@@ -98,18 +93,14 @@ doc.save();
 //	> "Document Saving"		 300ms
 //	```
 //	
-//	Now that the Second hook is in it's own thread, it starts immediately.
-//	
-//	It also allows the other hooks to run while it's working.
-//	
-//	In this case we reduced the execution time by 40%!
+//	Now that hook #2 is in it's own thread, it starts immediately, and allows other hooks to execute while it's working.
 //	
 //	----------------
 //	## Parallel Hooks
 //	
 //	Let's say you have a couple functions that don't rely on each other, but they do rely on a previous hook.
 //	
-//	This is a situation where you should use **parallel hooks**
+//	This is a situation where you should use **parallel hooks**.
 
 /***  EXAMPLE 3  ***/
 
@@ -142,6 +133,8 @@ doc.save();
 //	Instead of passing a single callback to `before()` or `after()`, 
 //	we can pass an array or hash of functions which will all be executed in parallel.
 //	
+//	**There is no limit to the number of threads or parallel hooks you can use.**
+//	
 //	----------------
 //	#### Diagram!
 //	
@@ -169,10 +162,11 @@ new Model().save(true, 42);
 //	```
 //	
 //	As you can see, arguments passed to the hooked function map to the middleware functions as you would expect.
-//	This is ideal if you just need to access the arguments, or if the arguments are already references that you can modify in place.
 //	
-//	If, for whatever reason, you wanted to flip the validate argument by the time it gets to the core save function, 
-//	just saying `validate = !validate` wouldn't work.  
+//	This is ideal if you just need to access the arguments, or if the arguments are references that you can modify in place.
+//	
+//	If, for whatever reason, you wanted to flip the validate argument before it gets to the core save function, 
+//	just adding `validate = !validate` wouldn't work.
 //	
 //	If you want to change a primative argument like that, you have two options:
 
@@ -190,10 +184,12 @@ Model.before(save, {argMap: true}, function(args) {
 	args.validate = !args.validate;
 });
 
-//	NOTE: Example 4 is faster and more efficient, but Example 5 is much more readable.
+//	NOTE: Example 4 is slightly faster and more efficient, but Example 5 is much more readable.
 //	
 //	It is also a good idea to use one of these options if the core function 
-//	has unnamed parameters that it access via the `arguments` variable.
+//	has unnamed parameters that it accesses via the `arguments` variable.
+//	
+//	Unnamed parameters won't be available except through one of these options.
 //	
 //	When using argMap, unnamed params retain their numerical index.
 //	
@@ -225,8 +221,8 @@ new Model().save();
 //	----------------
 //	## Instance Hooks
 //	
-//	Most of the time, there shouldn't be a need to add hooks to instances 
-//	when we add them on a constructor like in the previous examples.  
+//	Most of the time, there shouldn't be a need to add hooks to instances.
+//	When we add them on a constructor like in the previous examples, they will be inherited automatically.
 //	
 //	That said, if the need does arise, all you need to do is add hooks.before/after to the constructor's prototype:
 
