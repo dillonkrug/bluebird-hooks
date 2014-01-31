@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>core.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+      <ul id="jump_to">
+        <li>
+          <a class="large" href="javascript:void(0);">Jump To &hellip;</a>
+          <a class="small" href="javascript:void(0);">+</a>
+          <div id="jump_wrapper">
+          <div id="jump_page">
+            
+              
+              <a class="source" href="bluebird-hooks.html">
+                bluebird-hooks.js
+              </a>
+            
+              
+              <a class="source" href="core.html">
+                core.js
+              </a>
+            
+              
+              <a class="source" href="util.html">
+                util.js
+              </a>
+            
+          </div>
+        </li>
+      </ul>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>core.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">var</span> Promise = require(<span class="string">'bluebird'</span>),
+	util = require(<span class="string">'./util'</span>);
+
+<span class="keyword">var</span> hooks = {
+	before: <span class="function"><span class="keyword">function</span><span class="params">(method, options, fn)</span> {</span> 
+		hooks.addHook(<span class="keyword">this</span>, <span class="string">'before'</span>, method, options, fn);
+		<span class="keyword">return</span> <span class="keyword">this</span>;
+	},
+	after:  <span class="function"><span class="keyword">function</span><span class="params">(method, options, fn)</span> {</span> 
+		hooks.addHook(<span class="keyword">this</span>, <span class="string">'after'</span>, method, options, fn);
+		<span class="keyword">return</span> <span class="keyword">this</span>;
+	}
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>init just adds before/after functions to an object/constructor</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>hooks.init = <span class="function"><span class="keyword">function</span> <span class="title">init</span><span class="params">(o)</span> {</span>
+	o.before = hooks.before;
+	o.after = hooks.after;
+};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>Add a hook to a target[methodName]</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>hooks.addHook = <span class="function"><span class="keyword">function</span> <span class="title">addHook</span><span class="params">(target, timing, methodName, options, fn)</span> {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>If there is no method on the target, try the prototype</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">var</span> ctx = (target[methodName] &amp;&amp; !options.onProto) ? target : target.prototype || {},</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>the method we are wrapping</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		method = ctx[methodName];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>If there still isn&#39;t a method, throw!</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">if</span>(<span class="keyword">typeof</span> method !== <span class="string">'function'</span>) <span class="keyword">throw</span> <span class="keyword">new</span> TypeError(target.toString() + <span class="string">'has no method "'</span> + methodName + <span class="string">'"'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>If fn is undefined, we assume options is the target function</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">if</span> (<span class="keyword">typeof</span> fn === <span class="string">'undefined'</span>) options = { thread: <span class="string">'default'</span>, fn: options };</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>If no order option was specified, we auto-increment.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">if</span> (<span class="keyword">typeof</span> options.order === <span class="string">'undefined'</span>) options.order = util.inc();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>If options <em>were</em> specified, we add fn to the options</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">if</span> (<span class="keyword">typeof</span> options.fn === <span class="string">'undefined'</span>) options.fn = fn;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>If this is an un-hooked method, hookify it</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">if</span> (!method.$$hooks) {
+		method = ctx[methodName] = hooks.hookify(method);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>add a reference to context so we can tell if we need to extend.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		method.$$hooks.$$context = ctx
+	} <span class="keyword">else</span> <span class="keyword">if</span> (method.$$hooks.$$context !== ctx) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>this is an instance, or an constructor that inherited from a parent with hooks.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		method = ctx[methodName] = hooks.hookify(method.core, method.$$hooks.before, method.$$hooks.after);
+		method.$$hooks.$$context = ctx;
+	};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Attach hook</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	method.$$hooks[timing][options.order] = options;
+
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>takes a function and returns a wrapped version that will call all of our hooks!</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>hooks.hookify = <span class="function"><span class="keyword">function</span><span class="params">(fn, before, after)</span> {</span>
+	<span class="keyword">if</span> (<span class="keyword">typeof</span> fn !== <span class="string">'function'</span>) <span class="keyword">throw</span> <span class="keyword">new</span> TypeError(fn.toString() + <span class="string">' is not hookifiable'</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>the wrapper function</p>
+<todo>
+    [*TODO] Preserve function arity and, ideally, parameter names
+    <a href="http://blakeembrey.com/articles/forcing-function-arity-in-javascript/">http://blakeembrey.com/articles/forcing-function-arity-in-javascript/</a>
+    I&#39;d rather not use eval...
+</todo>
+
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">var</span> newFn = <span class="function"><span class="keyword">function</span> <span class="title">hooked</span> <span class="params">()</span> {</span>
+		<span class="keyword">var</span> scope = <span class="keyword">this</span>,</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>args are passed to the core function and all middleware.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		args = util.slice(arguments),</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>thread-specific data is passed to all middleware functions.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		data = {};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>execute &quot;before&quot; hooks</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="keyword">return</span> hooks.exec(newFn.$$hooks.before, scope, args, data, newFn.$$hooks.$$argList).then(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>execute core function</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="keyword">return</span> newFn.core.apply(scope, args);
+		}).then(<span class="function"><span class="keyword">function</span><span class="params">(result)</span> {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>execute &quot;after&quot; hooks</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="keyword">return</span> hooks.exec(newFn.$$hooks.after, scope, [result], data, newFn.$$hooks.$$argList).then(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>return the core function&#39;s return value</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="keyword">return</span> result;
+			});
+		});
+	};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>add hook storage.
+this is also used to check where a function has already been wrapped.</p>
+<p>Because we use an unfiltered for-in loop, we create objects with null prototypes to store them
+otherwise, Object.prototype manipulation by outside parties would cause some nasty bugs.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	newFn.$$hooks = { before: Object.create(before || <span class="literal">null</span>), after: Object.create(after || <span class="literal">null</span>) };
+
+	newFn.$$hooks.$$argList = util.parseArgs(fn);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>The core function can be dynamically changed by re-assigning wrappedFunction.core</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	newFn.core = fn;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>we return our wrapped function</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">return</span> newFn;
+};</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>execute a list of middleware.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>hooks.exec = <span class="function"><span class="keyword">function</span> <span class="title">exec</span> <span class="params">(hooks, scope, args, data, argNames)</span> {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>threads run in parallel.  if no thread is specified, we use the &#39;default&#39; thread.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">var</span> threads = {}, hdata;
+
+	util.each(hooks, <span class="function"><span class="keyword">function</span><span class="params">(hook)</span> {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>if the thread hasn&#39;t been initallized yet...</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="keyword">if</span> (!threads[hook.thread]) threads[hook.thread] = Promise.resolve();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>middleware data is thread-specific.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="keyword">if</span> (!data[hook.thread]) data[hook.thread] = {};
+
+		hdata = data[hook.thread];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>if the option argArray is set to true, we pass it as an object so it can be mutated.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		<span class="keyword">var</span> hookArgs =	(hook.argArray) ? [args, hdata] :</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>if the option argMap is set to true, we map named params to an object.<br>Unnamed params keep their numerical index.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>						(hook.argMap) ? [util.argsToObj(args, argNames), hdata] :</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Otherwise we make sure we&#39;re always passing a consistent number of arguments.</p>
+<p>If the function has a variable argument length, and only names the first few, </p>
+<p>the unnnamed parameters will be unavailable in hooks unless argMap or argArray is set to true.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>						(argNames.length) ? args.slice(<span class="number">0</span>, argNames.length-<span class="number">1</span>).concat(hdata) : [hdata];</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>add the next middleware to the thread...</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>		threads[hook.thread] = threads[hook.thread].then(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+			<span class="keyword">var</span> out;
+			<span class="keyword">if</span> (<span class="keyword">typeof</span> hook.fn === <span class="string">'object'</span>) {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>if the &quot;fn&quot; is actually an array/hash of functions, execute them in parallel.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				<span class="keyword">var</span> parallel = (Array.isArray(hook.fn)) ? [] : {};
+				util.each(hook.fn, <span class="function"><span class="keyword">function</span><span class="params">(fn, i)</span> {</span>
+					parallel[i] = (<span class="keyword">typeof</span> fn !== <span class="string">'function'</span>) ? fn : fn.apply(scope, hookArgs);
+				});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
+              </div>
+              <p>return a combined promise the resolves when all parallel functions are completed.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				out = Promise.props(parallel);
+			} <span class="keyword">else</span> {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-35">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-35">&#182;</a>
+              </div>
+              <p>otherwise, execute this middleware.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>				out = hook.fn.apply(scope, hookArgs) 
+			};
+
+			<span class="keyword">if</span> (!hook.argMap) <span class="keyword">return</span> out;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-36">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>if it <em>was</em> set to map the args, we have to merge any changes back into the arg array.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>			<span class="keyword">return</span> out.then(<span class="function"><span class="keyword">function</span><span class="params">(res)</span> {</span>
+				util.objToArgs(hookArgs[<span class="number">0</span>], argNames, args);
+				<span class="keyword">return</span> res;
+			});
+		});
+	});</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
+              </div>
+              <p>return a combined promise that resolves when all threads are finished.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>	<span class="keyword">return</span> Promise.props(threads);
+};
+
+
+
+
+
+module.exports = hooks;</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

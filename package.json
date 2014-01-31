@@ -1,0 +1,33 @@
+{
+	"name": "bluebird-hooks",
+	"version": "0.0.0",
+	"description": "implementation of hooks using bluebird promises",
+	"main": "src/bluebird-hooks.js",
+	"directories": {
+		"test": "test"
+	},
+	"scripts": {
+		"test": "test"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/dillonkrug/bluebird-hooks"
+	},
+	"keywords": [
+		"bluebird",
+		"hooks",
+		"pre",
+		"post",
+		"async",
+		"middleware"
+	],
+	"author": "Dillon Krug",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/dillonkrug/bluebird-hooks/issues"
+	},
+	"homepage": "https://github.com/dillonkrug/bluebird-hooks",
+	"dependencies": {
+		"bluebird": "*"
+	}
+}

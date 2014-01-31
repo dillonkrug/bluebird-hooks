@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<title>Intro</title>
+	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+	<link rel="stylesheet" media="all" href="public/stylesheets/normalize.css" />
+	<link rel="stylesheet" media="all" href="custom.css" />
+	<script src='https://ajax.googleapis.com/ajax/libs/jquery/1.6.3/jquery.min.js'></script>
+	<script src='custom.js'></script>
+</head>
+<body>
+	<div class="container">
+		<div class="page">
+			<div class="header">
+				
+				
+				<h1 id="intro">Intro</h1>
+<p>bluebird-hooks is, as you may have guessed, a middleware utility based around bluebird promises.</p>
+
+				
+				<div class='highlight'><pre><span class="keyword">var</span> hooks = require(<span class="string">'../src/bluebird-hooks'</span>),
+	db = require(<span class="string">'bluebird-mongo'</span>);	<span class="comment">// Note: I haven't gotten around to writing bluebird-mongo quite yet.</span></pre></div>
+				
+				
+
+				
+			</div>
+			
+			
+			<p>Let&#39;s dive in by creating a class we might want to add some hooks to.</p>
+
+			
+			<div class='highlight'><pre><span class="keyword">var</span> Model = <span class="function"><span class="keyword">function</span><span class="params">(data)</span> {</span>
+	<span class="keyword">this</span>.data = data;
+};
+
+Model.prototype = {
+	collection: <span class="string">'models'</span>,
+	save: <span class="function"><span class="keyword">function</span><span class="params">(validate, version)</span> {</span> 
+		<span class="comment">/* Model.save() — a delightful little function that returns a bluebird promise. */</span>
+		console.log(<span class="string">'Document Saving!'</span>);
+		<span class="keyword">return</span> db.collection(<span class="keyword">this</span>.collection).save(<span class="keyword">this</span>.data);
+	}
+}</pre></div>
+			
+			
+			
+			<p>And now to activate hooks:</p>
+
+			
+			<div class='highlight'><pre>Model.before = hooks.before;
+Model.after  = hooks.after;</pre></div>
+			
+			
+			
+			<p>All you need to do to get started is add hooks.before and hooks.after to the Constructor.</p>
+<p>I added it to the prototype, so we can add hooks to instances as well as the constructor level.</p>
+<p>More on that later.</p>
+<hr>
+
+			
+			
+			
+			<h1 id="middleware">Middleware</h1>
+<p>Hooks middleware works very much like other implementations of middleware, with some interesting new features.</p>
+<hr>
+
+			
+			
+			
+			<h2 id="threads">Threads</h2>
+<p>By default, new hooks are added to a &#39;default&#39; thread.<br>This means that if I add hooks without specifying a thread, 
+they will all execute sequentially</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 1  ***/</span>
+
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+	console.log(<span class="string">'Hook #1 Starting'</span>);  
+	<span class="keyword">return</span> delay(<span class="number">100</span>);
+})
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+	console.log(<span class="string">'Hook #2 Starting'</span>); 
+	<span class="keyword">return</span> delay(<span class="number">300</span>);
+})
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+	console.log(<span class="string">'Hook #3 Starting'</span>); 
+	<span class="keyword">return</span> delay(<span class="number">100</span>);
+})
+
+<span class="keyword">var</span> doc = <span class="keyword">new</span> Model({});
+
+doc.save();</pre></div>
+			
+			
+			
+			<p>Calling <code>doc.save()</code>  will log the following:</p>
+<pre><code>&gt; &quot;Hook #1 Starting&quot;          0ms
+&gt; &quot;Hook #2 Starting&quot;        100ms
+&gt; &quot;Hook #3 Starting&quot;        400ms
+&gt; &quot;Document Saving!&quot;        500ms
+</code></pre><p>That second hook is really taking a long time, and It doesn&#39;t depend on any other hooks, 
+so it doesn&#39;t need to be run sequentially.</p>
+<p>Let&#39;s give it it&#39;s own thread!</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 2  ***/</span>
+
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> <span class="comment">/* SAME AS BEFORE */</span> })
+Model.before(<span class="string">'save'</span>, {thread: <span class="string">'sideline'</span>}, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+	console.log(<span class="string">'Hook #2 Starting'</span>); 
+	<span class="keyword">return</span> delay(<span class="number">300</span>);
+})
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> <span class="comment">/* SAME AS BEFORE */</span> })
+
+<span class="keyword">var</span> doc = <span class="keyword">new</span> Model({});
+
+doc.save();</pre></div>
+			
+			
+			
+			<p>Now we have a better result:</p>
+<pre><code>&gt; &quot;Hook #1 Starting&quot;          0ms
+&gt; &quot;Hook #2 Starting&quot;          0ms
+&gt; &quot;Hook #3 Starting&quot;        100ms
+&gt; &quot;Document Saving&quot;         300ms
+</code></pre><p>Now that the Second hook is in it&#39;s own thread, it starts immediately.</p>
+<p>It also allows the other hooks to run while it&#39;s working.</p>
+<p>In this case we reduced the execution time by 40%!</p>
+<hr>
+
+			
+			
+			
+			<h2 id="parallel-hooks">Parallel Hooks</h2>
+<p>Let&#39;s say you have a couple functions that don&#39;t rely on each other, but they do rely on a previous hook.</p>
+<p>This is a situation where you should use <strong>parallel hooks</strong></p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 3  ***/</span>
+
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+	console.log(<span class="string">'Important Hook Starting'</span>);
+	<span class="keyword">return</span> delay(<span class="number">100</span>);
+})
+Model.before(<span class="string">'save'</span>, [
+	<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> 
+		console.log(<span class="string">'Hook #2 Starting'</span>); 
+		<span class="keyword">return</span> delay(<span class="number">100</span>);
+	},
+	<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+		console.log (<span class="string">'Hook #3 Starting'</span>)
+		<span class="keyword">return</span> delay(<span class="number">100</span>);
+	}
+]);
+
+<span class="keyword">var</span> doc = <span class="keyword">new</span> Model({});
+
+doc.save();</pre></div>
+			
+			
+			
+			<pre><code>&gt; &quot;Important Hook Starting&quot;   0ms
+&gt; &quot;Hook #2 Starting&quot;        100ms
+&gt; &quot;Hook #3 Starting&quot;        100ms
+&gt; &quot;Document Saving&quot;         200ms
+</code></pre><p>Instead of passing a single callback to <code>before()</code> or <code>after()</code>, 
+we can pass an array or hash of functions which will all be executed in parallel.</p>
+<hr>
+
+			
+			
+			
+			<h4 id="diagram-">Diagram!</h4>
+<p><a href="diagram.png" target="_blank"><img src="diagram.png" style="height:250px"></a></p>
+<hr>
+
+			
+			
+			
+			<h2 id="arguments">Arguments</h2>
+<p>As you can see, our save function has two parameters: <code>validate</code> and <code>version</code>.  What can we do with these?</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 4  ***/</span>
+
+Model.before(save, <span class="function"><span class="keyword">function</span><span class="params">(validate, version)</span> {</span>
+	console.log(<span class="string">'Validate is'</span>, validate);
+	console.log(<span class="string">'Version is'</span>, version);
+});
+
+<span class="keyword">new</span> Model().save(<span class="literal">true</span>, <span class="number">42</span>);</pre></div>
+			
+			
+			
+			<pre><code>&gt; &quot;Validate is&quot; true          0ms
+&gt; &quot;Version is&quot; 42             0ms
+&gt; &quot;Document Saving&quot;           0ms
+</code></pre><p>As you can see, arguments passed to the hooked function map to the middleware functions as you would expect.
+This is ideal if you just need to access the arguments, or if the arguments are already references that you can modify in place.</p>
+<p>If, for whatever reason, you wanted to flip the validate argument by the time it gets to the core save function, 
+just saying <code>validate = !validate</code> wouldn&#39;t work.  </p>
+<p>If you want to change a primative argument like that, you have two options:</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 4  ***/</span>
+
+Model.before(save, {argArray: <span class="literal">true</span>}, <span class="function"><span class="keyword">function</span><span class="params">(args)</span> {</span>
+	args[<span class="number">0</span>] = !args[<span class="number">0</span>];
+});</pre></div>
+			
+			
+			
+			<p>OR</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 5  ***/</span>
+
+Model.before(save, {argMap: <span class="literal">true</span>}, <span class="function"><span class="keyword">function</span><span class="params">(args)</span> {</span>
+	args.validate = !args.validate;
+});</pre></div>
+			
+			
+			
+			<p>NOTE: Example 4 is faster and more efficient, but Example 5 is much more readable.</p>
+<p>It is also a good idea to use one of these options if the core function 
+has unnamed parameters that it access via the <code>arguments</code> variable.</p>
+<p>When using argMap, unnamed params retain their numerical index.</p>
+<hr>
+
+			
+			
+			
+			<h2 id="hook-data">Hook Data</h2>
+<p>If an earlier hook needs to pass information to a subsequent hook, there is a additional parameter passed in to all hook functions:</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 6  ***/</span>
+
+Model.before(save, <span class="function"><span class="keyword">function</span><span class="params">(validate, version, data)</span> {</span>
+	data.msg = <span class="string">'Hey Number 2!'</span>;
+});
+
+Model.before(save, <span class="function"><span class="keyword">function</span><span class="params">(validate, version, data)</span> {</span>
+	console.log(<span class="string">'Message is'</span>, data.msg)
+});
+
+<span class="keyword">new</span> Model().save();</pre></div>
+			
+			
+			
+			<pre><code>&gt; &quot;Message is&quot; &quot;Hey Number 2!&quot;
+&gt; &quot;Document Saving&quot;
+</code></pre><p>NOTE! hook data is thread specific.</p>
+<hr>
+
+			
+			
+			
+			<h2 id="instance-hooks">Instance Hooks</h2>
+<p>Most of the time, there shouldn&#39;t be a need to add hooks to instances 
+when we add them on a constructor like in the previous examples.  </p>
+<p>That said, if the need does arise, all you need to do is add hooks.before/after to the constructor&#39;s prototype:</p>
+
+			
+			<div class='highlight'><pre>Model.prototype.before	= hooks.before;
+Model.prototype.after	= hooks.after;</pre></div>
+			
+			
+			
+			<p>This allows us to do the following:</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 7  ***/</span>
+
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+	console.log(<span class="string">'All Instances!'</span>)
+});
+
+<span class="keyword">var</span> doc1 = <span class="keyword">new</span> Model();
+
+doc1.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+	console.log(<span class="string">'This only happens on doc1'</span>);
+});
+
+<span class="keyword">var</span> doc2 = <span class="keyword">new</span> Model();
+
+console.log(<span class="string">'Saving Doc 1'</span>)
+doc1.save().then(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+	console.log(<span class="string">'-------------'</span>);
+	console.log(<span class="string">'Saving Doc 2'</span>);
+	doc2.save();
+});</pre></div>
+			
+			
+			
+			<pre><code>&gt; &quot;Saving Doc 1&quot;
+&gt; &quot;All Instances!&quot;
+&gt; &quot;This only happens on doc1&quot;
+&gt; &quot;Document Saving&quot;
+&gt; &quot;-------------&quot;
+&gt; &quot;Saving Doc 2&quot;
+&gt; &quot;All Instances!&quot;
+&gt; &quot;Document Saving&quot;
+</code></pre><p>Hooks added to one instance will not affect other instances.</p>
+<hr>
+
+			
+			
+			
+			<h2 id="extending-constructors">Extending Constructors</h2>
+<p>Say we&#39;ve added a bunch of nice hooks to Model, but it&#39;s time to get a little more specific.</p>
+<p>Just as with instances, when the hooks module detects a change in the context, it automatically extends itself.</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 8  ***/</span>
+
+Model.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> console.log(<span class="string">'All Instances'</span>) });
+
+<span class="keyword">var</span> User = <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+	Model.apply(<span class="keyword">this</span>, arguments);
+};
+
+User.prototype = <span class="keyword">new</span> Model();
+
+User.before = hooks.before;
+User.after  = hooks.after;</pre></div>
+			
+			
+			
+			<p>Note that we have to attach the before and after functions again. 
+Existing hooks will still work if they are not present, but you won&#39;t be able to add more.</p>
+
+			
+			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 8 — cont'd ***/</span>
+
+User.before(<span class="string">'save'</span>, <span class="function"><span class="keyword">function</span><span class="params">()</span> {</span> console.log(<span class="string">'Only Users'</span>) });
+
+console.log(<span class="string">'Saving Model Instance'</span>)
+<span class="keyword">new</span> Model().save().then(<span class="function"><span class="keyword">function</span><span class="params">()</span> {</span>
+	console.log(<span class="string">'-------------'</span>);
+	console.log(<span class="string">'Saving User Instance'</span>)
+	<span class="keyword">new</span> User().save()
+})</pre></div>
+			
+			
+			
+			<pre><code>&gt; &quot;Saving Model Instance&quot;
+&gt; &quot;All Instances&quot;
+&gt; &quot;Document Saving&quot;
+&gt; &quot;-------------&quot;
+&gt; &quot;Saving User Instance&quot;
+&gt; &quot;All Instances&quot;
+&gt; &quot;Only Users&quot;
+&gt; &quot;Document Saving&quot;
+</code></pre><p>Pretty cool.</p>
+<hr>
+
+			
+			
+			
+			<h1 id="options">Options</h1>
+<p><strong> options.thread </strong> — default: &#39;default&#39;</p>
+<p>Assign a thread for the hook to execute in.</p>
+<p><strong> options.argArray </strong> — default: false</p>
+<p>Pass original function arguments as an Array.</p>
+<p><strong> options.argMap </strong> — default: false</p>
+<p>Pass original function arguments as a named hash.</p>
+<p><strong> options.onProto </strong> — default: false</p>
+<p>If the scope of the before/after call has a method with the given name, the default is to add the hook to that method.
+If there is no such method, it looks for a prototype method.
+If <code>onProto</code> is set to <code>true</code>, only the prototype is checked.</p>
+<p><strong> options.order </strong> — default: Auto-Incrementing Number</p>
+<p>Use with caution!</p>
+<p>If you want a hook to execute first or last 
+but can&#39;t add at the proper time for some reason, you can set 
+<code>options.order</code> to a very low (negative) number or a very high number.</p>
+<p>Be careful — this can overwrite existing hooks if you use the wrong key.</p>
+<p>To find out the order of existing hooks you can inspect <code>obj.method.$$hooks</code>.</p>
+<p>Use decimals to avoid conflicts.</p>
+<p><strong> options.fn </strong> — (Function or Array/Hash of Functions)</p>
+<p>An alternate way to pass in the callback function.  This way overrides the regular parameter.</p>
+<hr>
+
+			
+			
+			
+			<h1 id="other-info">Other Info</h1>
+<ul>
+<li>You can access/change the wrapped function at wrappedFunction.core</li>
+</ul>
+
+			
+			
+			<div class="fleur">h</div>
+		</div>
+	</div>
+</body>
+</html>

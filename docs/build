@@ -1,0 +1,3 @@
+#!/bin/sh
+docco docs/demo.js -l linear -c docs/custom.css -t docs/custom.jst -o docs
+docco src/*.js -o docs
