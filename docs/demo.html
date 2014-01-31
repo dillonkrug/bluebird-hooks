@@ -16,7 +16,7 @@
 				
 				
 				<h1 id="intro">Intro</h1>
-<p>bluebird-hooks is, as you may have guessed, a middleware utility based around bluebird promises.</p>
+<p>bluebird-hooks is, as you may have guessed, a middleware utility built around bluebird promises.</p>
 
 				
 				<div class='highlight'><pre><span class="keyword">var</span> hooks = require(<span class="string">'../src/bluebird-hooks'</span>),
@@ -100,8 +100,7 @@ doc.save();</pre></div>
 &gt; &quot;Hook #2 Starting&quot;        100ms
 &gt; &quot;Hook #3 Starting&quot;        400ms
 &gt; &quot;Document Saving!&quot;        500ms
-</code></pre><p>That second hook is really taking a long time, and It doesn&#39;t depend on any other hooks, 
-so it doesn&#39;t need to be run sequentially.</p>
+</code></pre><p>That second hook is taking a long time, and it doesn&#39;t depend on any other hooks.</p>
 <p>Let&#39;s give it it&#39;s own thread!</p>
 
 			
@@ -125,9 +124,7 @@ doc.save();</pre></div>
 &gt; &quot;Hook #2 Starting&quot;          0ms
 &gt; &quot;Hook #3 Starting&quot;        100ms
 &gt; &quot;Document Saving&quot;         300ms
-</code></pre><p>Now that the Second hook is in it&#39;s own thread, it starts immediately.</p>
-<p>It also allows the other hooks to run while it&#39;s working.</p>
-<p>In this case we reduced the execution time by 40%!</p>
+</code></pre><p>Now that hook #2 is in it&#39;s own thread, it starts immediately, and allows other hooks to execute while it&#39;s working.</p>
 <hr>
 
 			
@@ -135,7 +132,7 @@ doc.save();</pre></div>
 			
 			<h2 id="parallel-hooks">Parallel Hooks</h2>
 <p>Let&#39;s say you have a couple functions that don&#39;t rely on each other, but they do rely on a previous hook.</p>
-<p>This is a situation where you should use <strong>parallel hooks</strong></p>
+<p>This is a situation where you should use <strong>parallel hooks</strong>.</p>
 
 			
 			<div class='highlight'><pre><span class="comment">/***  EXAMPLE 3  ***/</span>
@@ -167,6 +164,7 @@ doc.save();</pre></div>
 &gt; &quot;Document Saving&quot;         200ms
 </code></pre><p>Instead of passing a single callback to <code>before()</code> or <code>after()</code>, 
 we can pass an array or hash of functions which will all be executed in parallel.</p>
+<p><strong>There is no limit to the number of threads or parallel hooks you can use.</strong></p>
 <hr>
 
 			
@@ -197,10 +195,10 @@ Model.before(save, <span class="function"><span class="keyword">function</span><
 			<pre><code>&gt; &quot;Validate is&quot; true          0ms
 &gt; &quot;Version is&quot; 42             0ms
 &gt; &quot;Document Saving&quot;           0ms
-</code></pre><p>As you can see, arguments passed to the hooked function map to the middleware functions as you would expect.
-This is ideal if you just need to access the arguments, or if the arguments are already references that you can modify in place.</p>
-<p>If, for whatever reason, you wanted to flip the validate argument by the time it gets to the core save function, 
-just saying <code>validate = !validate</code> wouldn&#39;t work.  </p>
+</code></pre><p>As you can see, arguments passed to the hooked function map to the middleware functions as you would expect.</p>
+<p>This is ideal if you just need to access the arguments, or if the arguments are references that you can modify in place.</p>
+<p>If, for whatever reason, you wanted to flip the validate argument before it gets to the core save function, 
+just adding <code>validate = !validate</code> wouldn&#39;t work.</p>
 <p>If you want to change a primative argument like that, you have two options:</p>
 
 			
@@ -225,7 +223,7 @@ Model.before(save, {argMap: <span class="literal">true</span>}, <span class="fun
 			
 			<p>NOTE: Example 4 is faster and more efficient, but Example 5 is much more readable.</p>
 <p>It is also a good idea to use one of these options if the core function 
-has unnamed parameters that it access via the <code>arguments</code> variable.</p>
+has unnamed parameters that it accesses via the <code>arguments</code> variable.</p>
 <p>When using argMap, unnamed params retain their numerical index.</p>
 <hr>
 
@@ -259,8 +257,8 @@ Model.before(save, <span class="function"><span class="keyword">function</span><
 			
 			
 			<h2 id="instance-hooks">Instance Hooks</h2>
-<p>Most of the time, there shouldn&#39;t be a need to add hooks to instances 
-when we add them on a constructor like in the previous examples.  </p>
+<p>Most of the time, there shouldn&#39;t be a need to add hooks to instances.
+When we add them on a constructor like in the previous examples, they will be inherited automatically.</p>
 <p>That said, if the need does arise, all you need to do is add hooks.before/after to the constructor&#39;s prototype:</p>
 
 			
