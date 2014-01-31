@@ -1,6 +1,6 @@
 //	# Intro
 //	
-//	bluebird-hooks is, as you may have guessed, a middleware utility based around bluebird promises.
+//	bluebird-hooks is, as you may have guessed, a middleware utility built around bluebird promises.
 //	
 
 var hooks = require('../src/bluebird-hooks'),
