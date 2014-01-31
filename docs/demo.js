@@ -28,11 +28,7 @@ Model.prototype = {
 Model.before = hooks.before;
 Model.after  = hooks.after;
 
-//	All you need to do to get started is add hooks.before and hooks.after to the Constructor.
-//	
-//	I added it to the prototype, so we can add hooks to instances as well as the constructor level.
-//	
-//	More on that later.
+//	All you need to do to get started is add hooks.before and hooks.after to a constructor.
 //	
 //	----------------
 //	# Middleware
@@ -188,10 +184,12 @@ Model.before(save, {argMap: true}, function(args) {
 	args.validate = !args.validate;
 });
 
-//	NOTE: Example 4 is faster and more efficient, but Example 5 is much more readable.
+//	NOTE: Example 4 is slightly faster and more efficient, but Example 5 is much more readable.
 //	
 //	It is also a good idea to use one of these options if the core function 
 //	has unnamed parameters that it accesses via the `arguments` variable.
+//	
+//	Unnamed parameters won't be available except through one of these options.
 //	
 //	When using argMap, unnamed params retain their numerical index.
 //	

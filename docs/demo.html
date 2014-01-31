@@ -54,9 +54,7 @@ Model.after  = hooks.after;</pre></div>
 			
 			
 			
-			<p>All you need to do to get started is add hooks.before and hooks.after to the Constructor.</p>
-<p>I added it to the prototype, so we can add hooks to instances as well as the constructor level.</p>
-<p>More on that later.</p>
+			<p>All you need to do to get started is add hooks.before and hooks.after to a constructor.</p>
 <hr>
 
 			
@@ -221,9 +219,10 @@ Model.before(save, {argMap: <span class="literal">true</span>}, <span class="fun
 			
 			
 			
-			<p>NOTE: Example 4 is faster and more efficient, but Example 5 is much more readable.</p>
+			<p>NOTE: Example 4 is slightly faster and more efficient, but Example 5 is much more readable.</p>
 <p>It is also a good idea to use one of these options if the core function 
 has unnamed parameters that it accesses via the <code>arguments</code> variable.</p>
+<p>Unnamed parameters won&#39;t be available except through one of these options.</p>
 <p>When using argMap, unnamed params retain their numerical index.</p>
 <hr>
 
