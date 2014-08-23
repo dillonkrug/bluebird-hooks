@@ -139,7 +139,7 @@ hooks.exec = function exec (hooks, scope, args, data, argNames) {
 						//	If the function has a variable argument length, and only names the first few, 
 						//	
 						//	the unnnamed parameters will be unavailable in hooks unless argMap or argArray is set to true.
-						(argNames.length) ? args.slice(0, argNames.length-1).concat(hdata) : [hdata];
+						(argNames.length) ? args.slice(0, argNames.length).concat(hdata) : [hdata];
 
 		// add the next middleware to the thread...
 		threads[hook.thread] = threads[hook.thread].then(function() { 
