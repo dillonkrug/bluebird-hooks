@@ -1,6 +1,6 @@
 {
   "name": "bluebird-hooks",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "implementation of hooks using bluebird promises",
   "main": "src/bluebird-hooks.js",
   "directories": {
